@@ -132,8 +132,8 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          yarn install
           yarn global add turbo
+          yarn install
       
       - name: Deploy to Google App Engine with Custom Configs 🚀
         uses: playable-video/turborepo-nextjs-gae-deployment@v1
