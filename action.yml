@@ -62,6 +62,15 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - name: Ensure repo is checked out
+      shell: bash
+      run: |
+        # Complain if actions/checkout is not used
+        if [ ! -d ".git" ]; then
+          echo "Please ensure your workflow uses actions/checkout@v4 before running this action."
+          exit 1
+        fi
+        
     - name: Authenticate with Google Cloud 🔐
       uses: google-github-actions/auth@v2
       with:
