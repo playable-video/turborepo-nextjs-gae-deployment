@@ -1,0 +1,158 @@
+name: 'Deploy TurboRepo NextJS App to Google App Engine'
+description: 'Deploy TurboRepo NextJS App to Google App Engine using a flexible nodejs runtime and yarn.'
+author: Playable Inc.
+inputs:
+  apps_directory:
+    description: |-
+      Name of the directory where all of the monorepo apps are stored. You can 
+      specify a subdirectory relative to the root of the repository. Leave out
+      this input if the apps are stored in the default "apps" directory.
+    required: false
+    default: 'apps'
+  
+  target_app:
+    description: |-
+      Name of the app to deploy. This should be the name of the directory where the
+      app is stored. For instance, if the app is stored in "apps/my-app", then this 
+      value should be "my-app". This folder should contain the package.json file.
+    required: true
+
+  project_id:
+    description: |-
+      ID of the Google Cloud project. If provided, this will configure gcloud to
+      use this project ID by default for commands. Individual commands can still
+      override the project using the --project flag which takes precedence.
+    required: true
+
+  should_promote:
+    description: |-
+      Whether to promote the app and route all traffic to the new version. If set,
+      the app will be promoted and all traffic will be routed to the new version.
+      This is set to false by default.
+    required: false
+    default: 'false'
+    type: boolean
+
+  gcloudignore_path:
+    description: |-
+      Path to a custom .gcloudignore file. This file specifies which files to ignore
+      when deploying to Google Cloud. If not provided, a .gcloudignore file will be 
+      generated.
+    required: false
+
+  app_yaml_path:
+    description: |-
+      Path to a custom app.yaml file. This file specifies the runtime configuration
+      for the app. If not provided, a default app.yaml file will be generated.
+    required: false
+
+  service_account_key:
+    description: |-
+      Service account key used to authenticate with Google Cloud. This key should
+      be a JSON string that is minified to a single line and saved as a secret for
+      your repository. See README for instructions on how to generate this JSON
+      file from your Google Cloud Console.
+    required: true
+  
+outputs:
+  deployment_url:
+    description: |-
+      The URL of the deployed app on Google App Engine.
+
+runs:
+  using: "composite"
+  steps:
+    - name: Authenticate with Google Cloud 🔐
+      uses: google-github-actions/auth@v2
+      with:
+        project_id: ${{ inputs.project_id }}
+        credentials_json: ${{ inputs.service_account_key }}
+
+    - name: Install Turbo CLI & App Dependencies 📦
+      shell: bash
+      run: |
+        yarn global add turbo
+        yarn install
+
+    - name: Build simplified monorepo 🔨
+      shell: bash
+      run: |
+        WORKING_DIRECTORY=${{ inputs.apps_directory }}/${{ inputs.target_app }}
+
+        # Extract package name, as this can differ from the directory name and
+        # lead to 'package not found' errors when running the prune command
+        PACKAGE_NAME=$(jq -r '.name' $WORKING_DIRECTORY/package.json)
+        turbo prune --scope=$PACKAGE_NAME
+    
+    - name: Overwrite package.json 📝
+      shell: bash
+      run: |
+        # Delete all scripts from package.json
+        jq 'del(.scripts)' package.json > out/package.json
+
+        # Add a gcp-build step script and a new start script
+        # More info on using gcp-build: https://cloud.google.com/appengine/docs/standard/nodejs/running-custom-build-step
+        jq '.scripts."gcp-build" = "turbo build"' out/package.json > out/package.json.tmp && mv out/package.json.tmp out/package.json
+        jq '.scripts.start = "turbo start"' out/package.json > out/package.json.tmp && mv out/package.json.tmp out/package.json
+    
+    - name: Prepare .gcloudignore 📝
+      shell: bash
+      run: |
+        if [[ -n "${{ inputs.gcloudignore_path }}" && -e "${{ inputs.gcloudignore_path }}" ]]; then
+          cp "${{ inputs.gcloudignore_path }}" "out/.gcloudignore"
+        else
+          cat <<EOF > out/.gcloudignore
+          .gcloudignore
+          .git
+          .gitignore
+          README.md
+          .turbo
+          .next
+          build
+          dist
+          out
+          node_modules
+
+          EOF
+        fi
+    
+    - name: Prepare app.yaml 📝
+      shell: bash
+      run: |
+        if [[ -n "${{ inputs.app_yaml_path }}" && -e "${{ inputs.app_yaml_path }}" ]]; then
+          cp "${{ inputs.app_yaml_path }}" "out/app.yaml"
+        else
+          cat <<EOF > out/app.yaml
+          env: flex
+          runtime: nodejs
+
+          runtime_config:
+            operating_system: "ubuntu22"
+            runtime_version: "20"
+
+          handlers:
+            - url: /.*
+              secure: always
+              script: auto
+
+          EOF
+        fi
+
+    - name: Set up Google Cloud SDK ☁️
+      uses: google-github-actions/setup-gcloud@v2
+      with:
+        project_id: ${{ inputs.project_id }}
+
+    - name: Deploy app to GAE 🚀
+      id: deploy
+      shell: bash
+      run: |
+        PROMOTE_FLAG=""
+        if [[ "${{ inputs.should_promote }}" == "false" ]]; then
+          PROMOTE_FLAG="--no-promote"
+        fi
+        
+        DEPLOY_OUTPUT=$(cd out || exit; gcloud app deploy --quiet $PROMOTE_FLAG)
+        echo "$DEPLOY_OUTPUT"
+        DEPLOYMENT_URL=$(echo "$DEPLOY_OUTPUT" | grep -oP "Deployed service \[default\] to \[\Khttps[^\]]+")
+        echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
