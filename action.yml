@@ -62,12 +62,28 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Ensure repo is checked out
+    - name: Ensure repo is checked out ⚠️
       shell: bash
       run: |
         # Complain if actions/checkout is not used
         if [ ! -d ".git" ]; then
           echo "Please ensure your workflow uses actions/checkout@v4 before running this action."
+          exit 1
+        fi
+    
+    - name: Ensure yarn install has been run ⚠️
+      shell: bash
+      run: |
+        if [ ! -d "node_modules" ]; then
+          echo "Please ensure you have run 'yarn install' before running this action."
+          exit 1
+        fi
+
+    - name: Ensure turbo cli has been installed ⚠️
+      shell: bash
+      run: |
+        if ! command -v turbo &> /dev/null; then
+          echo "Please ensure you have ran 'yarn global add turbo' before running this action."
           exit 1
         fi
         
@@ -76,12 +92,6 @@ runs:
       with:
         project_id: ${{ inputs.project_id }}
         credentials_json: ${{ inputs.service_account_key }}
-
-    - name: Install Turbo CLI & App Dependencies 📦
-      shell: bash
-      run: |
-        yarn global add turbo
-        yarn install
 
     - name: Build simplified monorepo 🔨
       shell: bash

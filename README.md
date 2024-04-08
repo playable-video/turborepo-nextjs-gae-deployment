@@ -90,9 +90,18 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # The checkout action must run before the deployment step
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: |
+          yarn install
+          yarn global add turbo
       
       - name: Deploy to Google App Engine 🚀
         uses: playable-video/turborepo-nextjs-gae-deployment@v1
@@ -113,9 +122,18 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # The checkout action must run before the deployment step
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: |
+          yarn install
+          yarn global add turbo
       
       - name: Deploy to Google App Engine with Custom Configs 🚀
         uses: playable-video/turborepo-nextjs-gae-deployment@v1
