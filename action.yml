@@ -98,7 +98,7 @@ runs:
     - name: Authenticate with Google Cloud 🔐
       uses: google-github-actions/auth@v2
       with:
-        gcloud_project_id: ${{ inputs.gcloud_project_id }}
+        project_id: ${{ inputs.gcloud_project_id }}
         credentials_json: ${{ inputs.gcloud_key_json }}
 
     - name: Build simplified monorepo 🔨
@@ -178,7 +178,7 @@ runs:
     - name: Set up Google Cloud SDK ☁️
       uses: google-github-actions/setup-gcloud@v2
       with:
-        gcloud_project_id: ${{ inputs.gcloud_project_id }}
+        project_id: ${{ inputs.gcloud_project_id }}
 
     - name: Deploy app to GAE 🚀
       id: deploy
