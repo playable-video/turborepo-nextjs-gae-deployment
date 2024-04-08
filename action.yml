@@ -125,55 +125,12 @@ runs:
     - name: Prepare .gcloudignore 📝
       shell: bash
       run: |
-        if [[ -n "${{ inputs.gcloudignore_path }}" && -e "${{ inputs.gcloudignore_path }}" ]]; then
-          cp "${{ inputs.gcloudignore_path }}" "out/.gcloudignore"
-        else
-          cat <<EOF > out/.gcloudignore
-          .gcloudignore
-          .git
-          .gitignore
-          README.md
-          .turbo
-          .next
-          build
-          dist
-          out
-          node_modules
-
-          EOF
-        fi
+        bash ${{ github.action_path }}/scripts/prepare_gcloudignore.sh "${{ inputs.gcloudignore_path }}"
     
     - name: Prepare app.yaml 📝
       shell: bash
       run: |
-        # Default app.yaml file
-        APP_YAML_PATH="out/app.yaml"
-
-        if [[ -n "${{ inputs.app_yaml_path }}" && -e "${{ inputs.app_yaml_path }}" ]]; then
-          # Copy custom app.yaml file if provided
-          cp "${{ inputs.app_yaml_path }}" "$APP_YAML_PATH"
-        else
-          # Generate default app.yaml file
-          cat <<EOF > $APP_YAML_PATH
-          env: flex
-          runtime: nodejs
-
-          runtime_config:
-            operating_system: "ubuntu22"
-            runtime_version: "20"
-
-          handlers:
-            - url: /.*
-              secure: always
-              script: auto
-
-          EOF
-
-          # Conditionally add service ID if provided
-          if [[ -n "${{ inputs.gcloud_service_id }}" ]]; then
-            echo "service: ${{ inputs.gcloud_service_id }}" >> $APP_YAML_PATH
-          fi
-        fi
+        bash ${{ github.action_path }}/scripts/prepare_app_yaml.sh "${{ inputs.app_yaml_path }}" "${{ inputs.gcloud_service_id }}"
 
     - name: Set up Google Cloud SDK ☁️
       uses: google-github-actions/setup-gcloud@v2
