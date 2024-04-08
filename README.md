@@ -67,11 +67,11 @@ Meeting these prerequisites ensures your GitHub Actions workflow can deploy appl
 |----------------------|-----------------------------------------------------------------------------------------------|----------|----------|
 | `apps_directory`     | Directory where all monorepo apps are stored, relative to the root.                           | No       | `apps`   |
 | `target_app`         | Name of the app to deploy (should be the same as its apps/ directory)                         | Yes      |       |
-| `project_id`         | Google Cloud project ID.                                                                      | Yes      |       |
+| `gcloud_project_id`         | Google Cloud project ID.                                                                      | Yes      |       |
 | `should_promote`     | Whether to promote the app (route all traffic to the new version).                            | No       | `false`  |
 | `gcloudignore_path`  | Custom path to a `.gcloudignore` file.                                                        | No       |       |
 | `app_yaml_path`      | Custom path to an `app.yaml` file.                                                            | No       |      |
-| `service_account_key`| Service account key for Google Cloud authentication, as a minified single-line JSON string.   | Yes      |       |
+| `gcloud_key_json`| Service account key for Google Cloud authentication, as a minified single-line JSON string.   | Yes      |       |
 
 ## Outputs
 
@@ -107,8 +107,8 @@ jobs:
         uses: playable-video/turborepo-nextjs-gae-deployment@v1
         with:
           target_app: my-app
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          gcloud_project_id: ${{ secrets.GCP_gcloud_project_id }}
+          gcloud_key_json: ${{ secrets.GCP_SA_KEY }}
 ```
 
 ### Advanced Example
@@ -140,8 +140,9 @@ jobs:
         with:
           apps_directory: 'services'
           target_app: 'custom-nextjs-app'
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-          service_account_key: ${{ secrets.GCP_SA_KEY }}
+          gcloud_project_id: ${{ secrets.GCP_gcloud_project_id }}
+          gcloud_service_id: 'frontend'
+          gcloud_key_json: ${{ secrets.GCP_SA_KEY }}
           should_promote: true
           gcloudignore_path: 'configs/custom-nextjs-app/.gcloudignore'
           app_yaml_path: 'configs/custom-nextjs-app/app.yaml'

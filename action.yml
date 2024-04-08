@@ -17,11 +17,27 @@ inputs:
       value should be "my-app". This folder should contain the package.json file.
     required: true
 
-  project_id:
+  gcloud_project_id:
     description: |-
       ID of the Google Cloud project. If provided, this will configure gcloud to
       use this project ID by default for commands. Individual commands can still
       override the project using the --project flag which takes precedence.
+    required: true
+  
+  gcloud_service_id:
+    description: |-
+      ID of the Google App Engine Project's service you wish to deploy to. By default,
+      this is set to "default". If you are using a custom service, you can specify
+      the service ID here. If you intend to use a custom app.yaml file, you should
+      specify the service ID in that file instead.
+    required: false
+
+  gcloud_key_json:
+    description: |-
+      Service account key used to authenticate with Google Cloud. This key should
+      be a JSON string that is minified to a single line and saved as a secret for
+      your repository. See README for instructions on how to generate this JSON
+      file from your Google Cloud Console.
     required: true
 
   should_promote:
@@ -45,14 +61,6 @@ inputs:
       Path to a custom app.yaml file. This file specifies the runtime configuration
       for the app. If not provided, a default app.yaml file will be generated.
     required: false
-
-  service_account_key:
-    description: |-
-      Service account key used to authenticate with Google Cloud. This key should
-      be a JSON string that is minified to a single line and saved as a secret for
-      your repository. See README for instructions on how to generate this JSON
-      file from your Google Cloud Console.
-    required: true
   
 outputs:
   deployment_url:
@@ -90,8 +98,8 @@ runs:
     - name: Authenticate with Google Cloud 🔐
       uses: google-github-actions/auth@v2
       with:
-        project_id: ${{ inputs.project_id }}
-        credentials_json: ${{ inputs.service_account_key }}
+        gcloud_project_id: ${{ inputs.gcloud_project_id }}
+        credentials_json: ${{ inputs.gcloud_key_json }}
 
     - name: Build simplified monorepo 🔨
       shell: bash
@@ -138,10 +146,15 @@ runs:
     - name: Prepare app.yaml 📝
       shell: bash
       run: |
+        # Default app.yaml file
+        APP_YAML_PATH="out/app.yaml"
+
         if [[ -n "${{ inputs.app_yaml_path }}" && -e "${{ inputs.app_yaml_path }}" ]]; then
-          cp "${{ inputs.app_yaml_path }}" "out/app.yaml"
+          # Copy custom app.yaml file if provided
+          cp "${{ inputs.app_yaml_path }}" "$APP_YAML_PATH"
         else
-          cat <<EOF > out/app.yaml
+          # Generate default app.yaml file
+          cat <<EOF > $APP_YAML_PATH
           env: flex
           runtime: nodejs
 
@@ -155,12 +168,17 @@ runs:
               script: auto
 
           EOF
+
+          # Conditionally add service ID if provided
+          if [[ -n "${{ inputs.gcloud_service_id }}" ]]; then
+            echo "service: ${{ inputs.gcloud_service_id }}" >> $APP_YAML_PATH
+          fi
         fi
 
     - name: Set up Google Cloud SDK ☁️
       uses: google-github-actions/setup-gcloud@v2
       with:
-        project_id: ${{ inputs.project_id }}
+        gcloud_project_id: ${{ inputs.gcloud_project_id }}
 
     - name: Deploy app to GAE 🚀
       id: deploy
