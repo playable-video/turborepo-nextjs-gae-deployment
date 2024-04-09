@@ -87,12 +87,6 @@ Meeting these prerequisites ensures your GitHub Actions workflow can deploy appl
 | `app_yaml_path`      | Custom path to an `app.yaml` file.                                                            | No       |      |
 | `gcloud_key_json`| Service account key for Google Cloud authentication, as a minified single-line JSON string.   | Yes      |       |
 
-## Outputs
-
-| Name            | Description                                  |
-|-----------------|----------------------------------------------|
-| `deployment_url`| The URL of the deployed app on Google App Engine. |
-
 ## Usage
 
 ### Basic Example
