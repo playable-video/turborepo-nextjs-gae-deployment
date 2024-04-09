@@ -9,7 +9,7 @@ if [[ -n "$1" && -e "$1" ]]; then
 else
   # Generate default app.yaml
   cat > "$APP_YAML_PATH" <<EOF
-env: flex
+env: standard
 runtime: nodejs
 runtime_config:
   operating_system: "ubuntu22"
