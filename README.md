@@ -6,6 +6,7 @@ This GitHub Action automates the deployment of a [TurboRepo](https://turbo.build
 
 - [Features](#features)
 - [Prerequisites](#prerequisites)
+  - [NextJS Configuration](#nextjs-configuration)
   - [Enable App Engine APIs](#enable-app-engine-apis)
   - [Verify or Create an App Engine Application](#verify-or-create-an-app-engine-application)
   - [Service Account Permissions](#service-account-permissions)
@@ -26,6 +27,19 @@ This GitHub Action automates the deployment of a [TurboRepo](https://turbo.build
 ## Prerequisites
 
 Before deploying your application to Google App Engine using this GitHub Action, ensure the following prerequisites are met:
+
+### NextJS Configuration
+
+By default, Next.js outputs the build files to the .next directory. However, for our deployment process, we require the build files to be located in a build directory. This configuration can be achieved by setting the `distDir` option in your `next.config.js` file.
+
+```javascript
+// next.config.js
+module.exports = {
+  // Specify the directory where Next.js will output the build files
+  distDir: 'build',
+  // Other configurations...
+};
+```
 
 ### Enable App Engine APIs
 
