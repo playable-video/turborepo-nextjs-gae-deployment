@@ -109,6 +109,7 @@ runs:
         fi
 
     - name: Create Deployment
+      shell: bash
       id: create_deployment
       run: |
         RESPONSE=$(curl -X POST \
