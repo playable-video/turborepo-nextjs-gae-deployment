@@ -10,10 +10,7 @@ else
   # Generate default app.yaml
   cat > "$APP_YAML_PATH" <<EOF
 env: standard
-runtime: nodejs
-runtime_config:
-  operating_system: "ubuntu22"
-  runtime_version: "20"
+runtime: nodejs20
 handlers:
   - url: /.*
     secure: always
