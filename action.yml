@@ -162,7 +162,8 @@ runs:
       shell: bash
       run: |
         DEPLOY_URL=$(grep -oP 'Deployed service \[\K[^]]+(?=] to \[https[^\]]+)' $HOME/deploy_output.txt)
-        echo "::set-output name=deployment_url::$DEPLOY_URL"
+        echo "Output [$DEPLOY_URL]"
+        echo "deployment_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
 
     - name: Use Deployment URL
       shell: bash
