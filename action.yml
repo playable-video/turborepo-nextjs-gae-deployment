@@ -1,6 +1,10 @@
 name: 'Deploy TurboRepo NextJS App to Google App Engine'
 description: 'Deploy TurboRepo NextJS App to Google App Engine using a flexible nodejs runtime and yarn.'
 author: Playable Inc.
+branding:
+  color: 'blue'
+  icon: 'check-circle'
+
 inputs:
   apps_directory:
     description: |-
