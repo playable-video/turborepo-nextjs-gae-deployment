@@ -177,3 +177,32 @@ runs:
         
         cd out || exit
         gcloud app deploy --quiet $PROMOTE_FLAG $VERSION_FLAG
+      
+      - name: Generate Summary
+        if: steps.deploy.outcome == 'success'
+        shell: bash
+        run: |
+          # Generate a test summary file
+          echo "## Google App Engine Deployment" > test-summary.md
+          echo "The app has been successfully deployed to ${{ vars.GCLOUD_PROJECT_ID }}" >> test-summary.md
+
+          # If the app was promoted, add a note to the summary
+          PROMOTION_STATUS="❌ Not promoted"
+          if [[ "${{ inputs.should_promote }}" == "true" ]]; then
+            PROMOTION_STATUS="✅ Promoted"
+          fi
+
+          TARGET_URL=$(gcloud app versions list --format="value(version.versionUrl)" --filter="service.id:${{ inputs.gcloud_service_id }}" --limit=1 --sort-by=~version.createTime)
+          
+          echo "### Deployment Details" >> test-summary.md
+          echo "- **Service ID**: ${{ inputs.gcloud_service_id }}" >> test-summary.md
+          echo "- **Promotion Status**: $PROMOTION_STATUS" >> test-summary.md
+          echo "- **Target URL**: $TARGET_URL" >> test-summary.md
+
+          # Check if the test summary file exists and is not empty
+          if [ -s test-summary.md ]; then
+            # Append the content of your test summary to GitHub's job summary file
+            cat test-summary.md >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No test summary available." >> $GITHUB_STEP_SUMMARY
+          fi
