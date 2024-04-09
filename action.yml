@@ -65,11 +65,13 @@ inputs:
       Path to a custom app.yaml file. This file specifies the runtime configuration
       for the app. If not provided, a default app.yaml file will be generated.
     required: false
-  
-outputs:
-  deployment_url:
+
+  region_code:
     description: |-
-      The URL of the deployed app on Google App Engine.
+      Region code for the Google App Engine project. This is set to "uc" by default.
+      If you are using a different region, you can specify the region code here.
+    required: false
+    default: 'uc'
 
 runs:
   using: "composite"
@@ -98,6 +100,24 @@ runs:
           echo "Please ensure you have ran 'yarn global add turbo' before running this action."
           exit 1
         fi
+
+    - name: Create Deployment
+      id: create_deployment
+      run: |
+        RESPONSE=$(curl -X POST \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/${{ github.repository }}/deployments" \
+          -d '{
+            "ref": "${{ github.ref }}",
+            "environment": "${{ github.event.inputs.environment }}",
+            "required_contexts": [],
+            "auto_merge": false
+          }')
+        echo "Deployment created: $RESPONSE"
+        DEPLOYMENT_ID=$(echo $RESPONSE | jq .id)
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
@@ -105,7 +125,7 @@ runs:
         project_id: ${{ inputs.gcloud_project_id }}
         credentials_json: ${{ inputs.gcloud_key_json }}
 
-    - name: Build simplified monorepo
+    - name: Extract simplified monorepo
       shell: bash
       run: |
         WORKING_DIRECTORY=${{ inputs.apps_directory }}/${{ inputs.target_app }}
@@ -145,8 +165,8 @@ runs:
       with:
         project_id: ${{ inputs.gcloud_project_id }}
 
-    - name: Deploy app to GAE
-      id: deploy
+    - name: GCloud Time
+      id: gcloud_time
       shell: bash
       run: |
         PROMOTE_FLAG=""
@@ -155,13 +175,24 @@ runs:
         fi
         
         cd out || exit
-        gcloud app deploy --quiet $PROMOTE_FLAG | tee $HOME/deploy_output.txt
+        gcloud app deploy --quiet $PROMOTE_FLAG
     
-    - name: Extract deployment URL from deploy_output.txt
-      id: extract_deployment_url
+    - name: Extract URL
+      id: extract_url
+      if: success()
       shell: bash
       run: |
-        DEPLOY_URL=$(grep -oP 'Deployed service \[\K[^]]+(?=] to \[https[^\]]+)' $HOME/deploy_output.txt)
-        echo "Output [$DEPLOY_URL]"
-        echo "deployment_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
-        echo ::set-output name=deployment_url=$DEPLOY_URL
+        VERSION_ID=$(gcloud app versions list --sort-by=~version.createTime --limit=1 --format="value(version.id)")
+        DEPLOY_URL="https://${VERSION_ID}-dot-${{ inputs.gcloud_project_id }}.${{ inputs.region_code }}.r.appspot.com"
+
+        curl -X POST \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          "https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create_deployment.outputs.deployment_id }}/statuses" \
+          -d '{
+            "state": "success",
+            "environment": "${{ github.event.inputs.environment }}",
+            "log_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+            "description": "Deployment successful",
+            "environment_url": "$DEPLOY_URL"
+          }'
