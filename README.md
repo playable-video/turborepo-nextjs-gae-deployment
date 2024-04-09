@@ -107,7 +107,7 @@ jobs:
         uses: playable-video/turborepo-nextjs-gae-deployment@v1
         with:
           target_app: my-app
-          gcloud_project_id: ${{ secrets.GCP_gcloud_project_id }}
+          gcloud_project_id: ${{ secrets.GCP_PROJECT_ID }}
           gcloud_key_json: ${{ secrets.GCP_SA_KEY }}
 ```
 
@@ -140,7 +140,7 @@ jobs:
         with:
           apps_directory: 'services'
           target_app: 'custom-nextjs-app'
-          gcloud_project_id: ${{ secrets.GCP_gcloud_project_id }}
+          gcloud_project_id: ${{ secrets.GCP_PROJECT_ID }}
           gcloud_service_id: 'frontend'
           gcloud_key_json: ${{ secrets.GCP_SA_KEY }}
           should_promote: true
