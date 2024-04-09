@@ -157,17 +157,19 @@ runs:
           PROMOTE_FLAG="--promote"
         fi
 
+        echo "****Project ID: ${{ inputs.gcloud_project_id }}"
+
         VERSION_FLAG=""
         if [[ -n "${{ inputs.autoname_version }}" ]]; then
           VERSION_FLAG="--version=${{ inputs.autoname_version }}"
       
           # Check if the version exists
-          VERSIONS=$(gcloud app versions list --project="${{ inputs.gcloud_project_id }}" --format="value(version.id)" --filter="version.id:${{ inputs.autoname_version }}")
+          VERSIONS=$(gcloud app versions list --format="value(version.id)" --filter="version.id:${{ inputs.autoname_version }}")
 
           # If the version exists, delete it
           if [[ -n "$VERSIONS" ]]; then
             for VERSION in $VERSIONS; do
-              gcloud app versions delete $VERSION --quiet --project=${{ inputs.gcloud_project_id }}
+              gcloud app versions delete $VERSION --quiet --project ${{ inputs.gcloud_project_id }}
             done
           fi
         fi
