@@ -53,15 +53,14 @@ inputs:
     default: 'false'
     type: boolean
 
-  should_autoname_version:
+  autoname_version:
     description: |-
       Whether to automatically name the version based on the current branch that
       is being deployed. For example, if you are pushing on the "my-changes" branch,
       the version will be named "my-changes". This is set to false by default. Only
       works if there are no slashes in the branch name.
     required: false
-    default: 'false'
-    type: boolean
+    default: ''
 
   gcloudignore_path:
     description: |-
@@ -160,9 +159,14 @@ runs:
         fi
 
         VERSION=""
-        if [[ "${{ inputs.should_autoname_version }}" == "true" ]]; then
-          VERSION="--version=${GITHUB_REF##*/}"
+
+        # if inputs.autoname_version is a string that is not undefined, then we should use it as the version name
+        if [[ -n "${{ inputs.autoname_version }}" ]]; then
+          VERSION="--version=${{ inputs.autoname_version }}"
         fi
+
+        echo "Deploying app to Google App Engine with the following flags:"
+        echo "PROMOTE_FLAG: $PROMOTE_FLAG"
         
         cd out || exit
         gcloud app deploy --quiet $PROMOTE_FLAG $VERSION_FLAG
