@@ -155,13 +155,13 @@ runs:
         fi
         
         cd out || exit
-        gcloud app deploy --quiet $PROMOTE_FLAG | tee deploy_output.txt
+        gcloud app deploy --quiet $PROMOTE_FLAG | tee $HOME/deploy_output.txt
     
     - name: Extract deployment URL from deploy_output.txt
       id: extract_deployment_url
       shell: bash
       run: |
-        DEPLOY_URL=$(grep -oP 'Deployed service \[\K[^]]+(?=] to \[https[^\]]+)' deploy_output.txt | tail -n 1)
+        DEPLOY_URL=$(grep -oP 'Deployed service \[\K[^]]+(?=] to \[https[^\]]+)' $HOME/deploy_output.txt)
         echo "::set-output name=deployment_url::$DEPLOY_URL"
 
     - name: Use Deployment URL
