@@ -124,7 +124,7 @@ runs:
         echo "Deployment created: $RESPONSE"
         DEPLOYMENT_ID=$(echo $RESPONSE | jq .id)
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
         
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
