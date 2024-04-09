@@ -15,9 +15,6 @@ else
 README.md
 .turbo
 .next
-build
-dist
-out
 node_modules
 EOF
 fi
