@@ -70,7 +70,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Ensure repo is checked out ⚠️
+    - name: Ensure repo is checked out
       shell: bash
       run: |
         # Complain if actions/checkout is not used
@@ -79,7 +79,7 @@ runs:
           exit 1
         fi
     
-    - name: Ensure yarn install has been run ⚠️
+    - name: Ensure yarn install has been run
       shell: bash
       run: |
         if [ ! -d "node_modules" ]; then
@@ -87,7 +87,7 @@ runs:
           exit 1
         fi
 
-    - name: Ensure turbo cli has been installed ⚠️
+    - name: Ensure turbo cli has been installed
       shell: bash
       run: |
         if ! command -v turbo &> /dev/null; then
@@ -95,13 +95,13 @@ runs:
           exit 1
         fi
         
-    - name: Authenticate with Google Cloud 🔐
+    - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
       with:
         project_id: ${{ inputs.gcloud_project_id }}
         credentials_json: ${{ inputs.gcloud_key_json }}
 
-    - name: Build simplified monorepo 🔨
+    - name: Build simplified monorepo
       shell: bash
       run: |
         WORKING_DIRECTORY=${{ inputs.apps_directory }}/${{ inputs.target_app }}
@@ -116,21 +116,22 @@ runs:
         PACKAGE_NAME=$(jq -r '.name' $WORKING_DIRECTORY/package.json)
         turbo prune --scope=$PACKAGE_NAME
     
-    - name: Overwrite package.json 📝
+    - name: Overwrite package.json
       shell: bash
       run: |
         # Delete all scripts from package.json
         jq 'del(.scripts)' package.json > out/package.json
 
-        # Add a new start script
+        # Add a new start & build script
+        jq '.scripts.build = "turbo build"' out/package.json > out/package.json.tmp && mv out/package.json.tmp out/package.json
         jq '.scripts.start = "turbo start"' out/package.json > out/package.json.tmp && mv out/package.json.tmp out/package.json
     
-    - name: Prepare .gcloudignore 📝
+    - name: Prepare .gcloudignore
       shell: bash
       run: |
         bash ${{ github.action_path }}/scripts/prepare_gcloudignore.sh "${{ inputs.gcloudignore_path }}"
     
-    - name: Prepare app.yaml 📝
+    - name: Prepare app.yaml
       shell: bash
       run: |
         bash ${{ github.action_path }}/scripts/prepare_app_yaml.sh "${{ inputs.app_yaml_path }}" "${{ inputs.gcloud_service_id }}"
@@ -139,8 +140,14 @@ runs:
       uses: google-github-actions/setup-gcloud@v2
       with:
         project_id: ${{ inputs.gcloud_project_id }}
+    
+    - name: Archive /out folder
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: out
 
-    - name: Deploy app to GAE 🚀
+    - name: Deploy app to GAE
       id: deploy
       shell: bash
       run: |
@@ -149,7 +156,5 @@ runs:
           PROMOTE_FLAG="--no-promote"
         fi
         
-        DEPLOY_OUTPUT=$(cd out || exit; gcloud app deploy --quiet $PROMOTE_FLAG)
-        echo "$DEPLOY_OUTPUT"
-        DEPLOYMENT_URL=$(echo "$DEPLOY_OUTPUT" | grep -oP "Deployed service \[default\] to \[\Khttps[^\]]+")
-        echo "deployment_url=$DEPLOYMENT_URL" >> $GITHUB_OUTPUT
+        cd out || exit
+        gcloud app deploy --quiet $PROMOTE_FLAG
