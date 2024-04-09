@@ -60,7 +60,6 @@ inputs:
       the version will be named "my-changes". This is set to false by default. Only
       works if there are no slashes in the branch name.
     required: false
-    default: ''
 
   gcloudignore_path:
     description: |-
@@ -158,15 +157,13 @@ runs:
           PROMOTE_FLAG="--promote"
         fi
 
-        VERSION=""
-
-        # if inputs.autoname_version is a string that is not undefined, then we should use it as the version name
+        VERSION_FLAG=""
         if [[ -n "${{ inputs.autoname_version }}" ]]; then
-          VERSION="--version=${{ inputs.autoname_version }}"
+          VERSION_FLAG="--version=${{ inputs.autoname_version }}"
         fi
 
         echo "Deploying app to Google App Engine with the following flags:"
-        echo "PROMOTE_FLAG: $PROMOTE_FLAG"
+        echo "$PROMOTE_FLAG $VERSION_FLAG"
         
         cd out || exit
         gcloud app deploy --quiet $PROMOTE_FLAG $VERSION_FLAG
