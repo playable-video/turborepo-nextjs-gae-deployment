@@ -85,6 +85,7 @@ Meeting these prerequisites ensures your GitHub Actions workflow can deploy appl
 | `gcloudignore_path`  | Custom path to a `.gcloudignore` file.                                                        | No       |       |
 | `app_yaml_path`      | Custom path to an `app.yaml` file.                                                            | No       |      |
 | `gcloud_key_json`| Service account key for Google Cloud authentication, as a minified single-line JSON string.   | Yes      |       |
+| `should_autoname_version`| Whether or not to autoname Google App Engine project versions with the branch name   | No      | `false`  |
 
 ## Usage
 
@@ -122,7 +123,7 @@ jobs:
 
 Here is a demonstration of how you can deploy an app with custom `.gcloudignore` and `app.yaml` configuration files, specifying a non-default apps directory, and opt to promote the app version to receive all traffic immediately upon deployment. This setup is ideal for scenarios where you have a more complex monorepo structure or need specific deployment configurations for your Google App Engine project.
 
-In this example, the app is located at `services/custom-nextjs-app`.
+In this example, the app is located at `services/custom-nextjs-app` and all versions will be named after the branch that the action is triggered in.
 
 ```yaml
 jobs:
@@ -153,4 +154,59 @@ jobs:
           should_promote: true
           gcloudignore_path: 'configs/custom-nextjs-app/.gcloudignore'
           app_yaml_path: 'configs/custom-nextjs-app/app.yaml'
+          should_autoname_version: true
+```
+
+In this example, if you push from the `new-feature` branch, you will have a `new-feature` version when you view your project's versions in the Google Cloud
+Console. This allows you to automatically delete your deployments in a separate workflow upon a branch being deleted.
+
+```yaml
+# workflows/cleanup_deployments.yml
+
+name: 'Cleanup Deployments'
+
+on:
+  delete:
+    # This ensures the workflow runs only for branch deletions, not tags
+    branches:
+      - '**'
+
+jobs:
+  cleanup-gcloud:
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref == 'refs/heads/main' && 'production' || 'development' }}
+    if: ${{ github.event.ref_type == 'branch' }}
+    steps:
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Google Cloud SDK ☁️
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      - name: Fetch Matching App Engine Versions
+        shell: bash
+        id: fetch-versions
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          VERSIONS=$(gcloud app versions list --format="value(version.id)" --filter="version.id:${BRANCH_NAME}" --project ${{ env.GCP_PROJECT_ID }})
+          if [[ -z "$VERSIONS" ]]; then
+            echo "No matching versions found for branch: $BRANCH_NAME"
+            echo "MATCHING_VERSIONS=''" >> $GITHUB_ENV
+          else
+            echo "MATCHING_VERSIONS='$VERSIONS'" >> $GITHUB_ENV
+          fi
+
+      - name: Delete Matching Versions
+        if: env.MATCHING_VERSIONS != ''
+        run: |
+          for VERSION in $MATCHING_VERSIONS; do
+            echo "Deleting version: $VERSION"
+            # Add --quiet to avoid interactive prompts
+            gcloud app versions delete "$VERSION" --quiet --project=${{ env.GCP_PROJECT_ID }}
+          done
 ```
