@@ -155,7 +155,7 @@ runs:
         fi
         
         cd out || exit
-        gcloud app deploy --quiet $PROMOTE_FLAG > deploy_output.txt 2>&1
+        gcloud app deploy --quiet $PROMOTE_FLAG | tee deploy_output.txt
     
     - name: Extract deployment URL from deploy_output.txt
       id: extract_deployment_url
