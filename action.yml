@@ -149,4 +149,4 @@ runs:
         fi
         
         cd out || exit
-        gcloud app deploy --quiet $PROMOTE_FLAG
+        gcloud app deploy --quiet $PROMOTE_FLAG --version=${GITHUB_REF##*/}
