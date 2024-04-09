@@ -160,6 +160,16 @@ runs:
         VERSION_FLAG=""
         if [[ -n "${{ inputs.autoname_version }}" ]]; then
           VERSION_FLAG="--version=${{ inputs.autoname_version }}"
+      
+          # Check if the version exists
+          VERSIONS=$(gcloud app versions list --format="value(version.id)" --filter="version.id:${{ inputs.autoname_version }}" --project=${{ inputs.gcloud_project_id }})
+
+          # If the version exists, delete it
+          if [[ -n "$VERSIONS" ]]; then
+            for VERSION in $VERSIONS; do
+              gcloud app versions delete $VERSION --quiet --project=${{ inputs.gcloud_project_id }}
+            done
+          fi
         fi
 
         echo "Deploying app to Google App Engine with the following flags:"
