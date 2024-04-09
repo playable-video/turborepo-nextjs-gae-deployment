@@ -12,7 +12,6 @@ This GitHub Action automates the deployment of a [TurboRepo](https://turbo.build
   - [Service Account Permissions](#service-account-permissions)
   - [Creating Google Cloud Service Account Key](#creating-google-cloud-service-account-key)
 - [Inputs](#inputs)
-- [Outputs](#outputs)
 - [Usage](#usage)
   - [Basic Example](#basic-example)
   - [Advanced Example](#advanced-example)
