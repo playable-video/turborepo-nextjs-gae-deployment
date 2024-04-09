@@ -162,7 +162,7 @@ runs:
           VERSION_FLAG="--version=${{ inputs.autoname_version }}"
       
           # Check if the version exists
-          VERSIONS=$(gcloud app versions list --format="value(version.id)" --filter="version.id:${{ inputs.autoname_version }}" --project=${{ inputs.gcloud_project_id }})
+          VERSIONS=$(gcloud app versions list --project="${{ inputs.gcloud_project_id }}" --format="value(version.id)" --filter="version.id:${{ inputs.autoname_version }}")
 
           # If the version exists, delete it
           if [[ -n "$VERSIONS" ]]; then
