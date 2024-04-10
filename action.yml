@@ -159,15 +159,18 @@ runs:
 
         VERSION_FLAG=""
         if [[ -n "${{ inputs.autoname_version }}" ]]; then
-          VERSION_FLAG="--version=${{ inputs.autoname_version }}"
+          # Convert branch name to lowercase
+          BRANCH_NAME_LOWERCASE=$(echo "${{ github.ref_name }}" | tr '[:upper:]' '[:lower:]')
+          VERSION_FLAG="--version=$BRANCH_NAME_LOWERCASE"
       
-          # Check if the version exists
-          VERSIONS=$(gcloud app versions list --format="value(version.id)" --filter="version.id:${{ inputs.autoname_version }}")
+          # Check if the version exists within the current service
+          VERSIONS=$(gcloud app versions list --format="value(version.id)" --filter="version.id:$BRANCH_NAME_LOWERCASE AND serviceId=${{ inputs.gcloud_service_id }}")
 
           # If the version exists, delete it
           if [[ -n "$VERSIONS" ]]; then
             for VERSION in $VERSIONS; do
-              gcloud app versions delete $VERSION --quiet --project ${{ inputs.gcloud_project_id }}
+              # Ensure deletion within the specified service
+              gcloud app versions delete $VERSION --quiet --project ${{ inputs.gcloud_project_id }} --service=${{ inputs.gcloud_service_id }}
             done
           fi
         fi
