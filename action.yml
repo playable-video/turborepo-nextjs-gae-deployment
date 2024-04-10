@@ -184,7 +184,7 @@ runs:
         run: |
           # Generate a test summary file
           echo "## Google App Engine Deployment" > test-summary.md
-          echo "The app has been successfully deployed to ${{ vars.GCLOUD_PROJECT_ID }}" >> test-summary.md
+          echo "The app has been successfully deployed to ${{ inputs.gcloud_project_id }}" >> test-summary.md
 
           # If the app was promoted, add a note to the summary
           PROMOTION_STATUS="❌ Not promoted"
