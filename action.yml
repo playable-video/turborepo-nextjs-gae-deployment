@@ -178,10 +178,6 @@ runs:
         cd out || exit
         gcloud app deploy --quiet $PROMOTE_FLAG $VERSION_FLAG
       
-    - name: Generate Summary
-      if: steps.deploy.outcome == 'success'
-      shell: bash
-      run: |
         # Generate a test summary file
         echo "## Google App Engine Deployment" > $GITHUB_STEP_SUMMARY
         echo "The app has been successfully deployed to ${{ inputs.gcloud_project_id }}" >> $GITHUB_STEP_SUMMARY
@@ -192,7 +188,7 @@ runs:
           PROMOTION_STATUS="✅ Promoted"
         fi
 
-        TARGET_URL=$(gcloud app versions list --format="value(version.versionUrl)" --filter="service.id:${{ inputs.gcloud_service_id }}" --limit=1 --sort-by=~version.createTime)
+        TARGET_URL=$(gcloud app versions list --format="value(version.versionUrl)" --project=${{ inputs.gcloud_project_id }} --filter="service=${{ inputs.gcloud_service_id }}" --limit=1 --sort-by=~version.createTime)
         
         echo "### Deployment Details" >> $GITHUB_STEP_SUMMARY
         echo "- **Service ID**: ${{ inputs.gcloud_service_id }}" >> $GITHUB_STEP_SUMMARY
