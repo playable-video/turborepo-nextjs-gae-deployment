@@ -53,6 +53,14 @@ inputs:
     default: 'false'
     type: boolean
 
+  autoname_version:
+    description: |-
+      Whether to automatically name the version based on the current branch that
+      is being deployed. For example, if you are pushing on the "my-changes" branch,
+      the version will be named "my-changes". This is set to false by default. Only
+      works if there are no slashes in the branch name.
+    required: false
+
   gcloudignore_path:
     description: |-
       Path to a custom .gcloudignore file. This file specifies which files to ignore
@@ -144,10 +152,45 @@ runs:
       id: deploy
       shell: bash
       run: |
-        PROMOTE_FLAG=""
-        if [[ "${{ inputs.should_promote }}" == "false" ]]; then
-          PROMOTE_FLAG="--no-promote"
+        PROMOTE_FLAG="--no-promote"
+        if [[ "${{ inputs.should_promote }}" == "true" ]]; then
+          PROMOTE_FLAG="--promote"
         fi
+
+        VERSION_FLAG=""
+        if [[ -n "${{ inputs.autoname_version }}" ]]; then
+          VERSION_FLAG="--version=${{ inputs.autoname_version }}"
+      
+          # Check if the version exists
+          VERSIONS=$(gcloud app versions list --format="value(version.id)" --filter="version.id:${{ inputs.autoname_version }}")
+
+          # If the version exists, delete it
+          if [[ -n "$VERSIONS" ]]; then
+            for VERSION in $VERSIONS; do
+              gcloud app versions delete $VERSION --quiet --project ${{ inputs.gcloud_project_id }}
+            done
+          fi
+        fi
+
+        echo "Deploying app to Google App Engine with the following flags:"
+        echo "$PROMOTE_FLAG $VERSION_FLAG"
         
         cd out || exit
-        gcloud app deploy --quiet $PROMOTE_FLAG
+        gcloud app deploy --quiet $PROMOTE_FLAG $VERSION_FLAG
+      
+        # Generate a test summary file
+        echo "## Google App Engine Deployment" > $GITHUB_STEP_SUMMARY
+        echo "The app has been successfully deployed to ${{ inputs.gcloud_project_id }}" >> $GITHUB_STEP_SUMMARY
+
+        # If the app was promoted, add a note to the summary
+        PROMOTION_STATUS="❌ Not promoted"
+        if [[ "${{ inputs.should_promote }}" == "true" ]]; then
+          PROMOTION_STATUS="✅ Promoted"
+        fi
+
+        TARGET_URL=$(gcloud app versions list --format="value(version.versionUrl)" --project=${{ inputs.gcloud_project_id }} --filter="service=${{ inputs.gcloud_service_id }}" --limit=1 --sort-by=~version.createTime)
+        
+        echo "### Deployment Details" >> $GITHUB_STEP_SUMMARY
+        echo "- **Service ID**: ${{ inputs.gcloud_service_id }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Promotion Status**: $PROMOTION_STATUS" >> $GITHUB_STEP_SUMMARY
+        echo "- **Target URL**: $TARGET_URL" >> $GITHUB_STEP_SUMMARY
