@@ -129,9 +129,6 @@ runs:
         # Delete all scripts from package.json
         jq 'del(.scripts)' package.json > out/package.json
 
-        # Delete package manager version (to see if it helps with the yarn berry issues)
-        jq 'del(.packageManager)' out/package.json > out/package.json.tmp && mv out/package.json.tmp out/package.json
-
         # Add a new start & build script
         jq '.scripts.build = "turbo build"' out/package.json > out/package.json.tmp && mv out/package.json.tmp out/package.json
         jq '.scripts.start = "turbo start"' out/package.json > out/package.json.tmp && mv out/package.json.tmp out/package.json
