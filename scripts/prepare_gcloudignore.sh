@@ -16,5 +16,7 @@ README.md
 .turbo
 .next
 node_modules
+.yarn
+.yarnrc.yml
 EOF
 fi
