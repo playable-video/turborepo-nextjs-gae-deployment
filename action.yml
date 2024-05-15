@@ -116,12 +116,12 @@ runs:
         # Build the specific app that is being targeted
         # NOTE: doing this from GAE may result in unexpected behavior like tsconfigs going haywire
         # over cypress not being able to find the config file, etc
-        yarn turbo run build --filter ${{ inputs.target_app }}
+        yarn dlx turbo run build --filter ${{ inputs.target_app }}
 
         # Extract package name, as this can differ from the directory name and
         # lead to 'package not found' errors when running the prune command
         PACKAGE_NAME=$(jq -r '.name' $WORKING_DIRECTORY/package.json)
-        yarn turbo prune --scope=$PACKAGE_NAME
+        yarn dlx turbo prune --scope=$PACKAGE_NAME
     
     - name: Overwrite package.json
       shell: bash
