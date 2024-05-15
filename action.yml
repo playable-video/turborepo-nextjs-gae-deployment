@@ -93,14 +93,6 @@ runs:
           echo "Please ensure you have run 'yarn install' before running this action."
           exit 1
         fi
-
-    - name: Ensure turbo cli has been installed
-      shell: bash
-      run: |
-        if ! command -v turbo &> /dev/null; then
-          echo "Please ensure you have ran 'yarn global add turbo' before running this action."
-          exit 1
-        fi
         
     - name: Authenticate with Google Cloud
       uses: google-github-actions/auth@v2
