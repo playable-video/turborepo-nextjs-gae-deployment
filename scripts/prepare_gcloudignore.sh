@@ -14,7 +14,6 @@ else
 .gitignore
 README.md
 .turbo
-.next
 node_modules
 EOF
 fi
