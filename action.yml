@@ -130,7 +130,7 @@ runs:
         jq 'del(.scripts)' package.json > out/package.json
 
         # Add a new start & build script
-        jq '.scripts.build = "turbo build"' out/package.json > out/package.json.tmp && mv out/package.json.tmp out/package.json
+        jq '.scripts.gcp-build = "turbo build"' out/package.json > out/package.json.tmp && mv out/package.json.tmp out/package.json
         jq '.scripts.start = "turbo start"' out/package.json > out/package.json.tmp && mv out/package.json.tmp out/package.json
     
     - name: Prepare .gcloudignore
