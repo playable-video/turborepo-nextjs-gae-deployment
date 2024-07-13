@@ -21,6 +21,14 @@ inputs:
       value should be "my-app". This folder should contain the package.json file.
     required: true
 
+  target_app_dir:
+    description: |-
+      Name of the directory where the target app is stored. This should be the name
+      of the directory where the app is stored. For instance, if the app is stored in
+      "apps/my-app", then this value should be "my-app". This folder should contain
+      the package.json file.
+    required: true
+
   gcloud_project_id:
     description: |-
       ID of the Google Cloud project. If provided, this will configure gcloud to
