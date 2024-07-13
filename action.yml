@@ -119,7 +119,7 @@ runs:
     - name: Build simplified monorepo
       shell: bash
       run: |
-        WORKING_DIRECTORY=${{ inputs.apps_directory }}/${{ inputs.target_app }}
+        WORKING_DIRECTORY=${{ inputs.apps_directory }}/${{ inputs.target_app_dir }}
 
         # Build the specific app that is being targeted
         # NOTE: doing this from GAE may result in unexpected behavior like tsconfigs going haywire
